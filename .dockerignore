@@ -1,0 +1,7 @@
+target/
+.git/
+.mvn/wrapper/maven-wrapper.jar
+*.md
+.github/
+k8s/
+cosign.key
