@@ -22,6 +22,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
         with:
+          fetch-depth: 0 # Fetch whole commit history - required for secret scanning
           persist-credentials: false # Don't leave the git token in the workspace for later steps
       
       - name: Run Zizmor
@@ -29,6 +30,11 @@ jobs:
         with:
           advanced-security: false
 
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
   build:
     needs: workflow-analysis
     runs-on: ubuntu-latest
