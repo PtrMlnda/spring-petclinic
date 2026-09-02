@@ -64,6 +64,24 @@ jobs:
           scanners: vuln
           format: json
           output: trivy-dependency-report.json
+          skip-setup-trivy: true # Skip Trivy setup since it was already set up in the previous step
+
+      - name: Trivy configuration scan (gate)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          severity: HIGH,CRITICAL
+          exit-code: 1
+          skip-setup-trivy: true
+
+      - name: Trivy configuration scan (report)
+        if: always() 
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          format: json
+          output: trivy-configuration-report.json
+          skip-setup-trivy: true 
 
       - name: Set up Docker Buildx
         id: build
