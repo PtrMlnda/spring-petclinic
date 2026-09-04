@@ -158,6 +158,32 @@ jobs:
           IMAGE: ghcr.io/ptrmlnda/petclinic
           DIGEST: ${{ steps.push.outputs.digest }}
 
+      - name: Checkout deploy repository
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+        with:
+          repository: ptrmlnda/petclinic-deploy
+          token: ${{ secrets.DEPLOY_PAT }}
+          path: deploy
+
+      - name: Update image digest
+        if: ${{ github.ref == 'refs/heads/main' }}
+        working-directory: deploy
+        run: |
+          yq -i '.spec.template.spec.containers[0].image = strenv(NEW_IMAGE)' base/deployment.yaml
+        env:
+          NEW_IMAGE: ghcr.io/ptrmlnda/petclinic@${{ steps.push.outputs.digest }}
+
+      - name: Commit and push changes
+        if: ${{ github.ref == 'refs/heads/main' }}
+        working-directory: deploy
+        run: |
+          git config user.name "petclinic-ci"
+          git config user.email "petclinic-ci@example.invalid"
+          git add base/deployment.yaml
+          git diff --cached --quiet || git commit -m "Deploy new image: ${{ steps.push.outputs.digest }}"
+          git push
+
       - name: Generate SBOM
         uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
