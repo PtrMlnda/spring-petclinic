@@ -181,7 +181,7 @@ jobs:
         run: |
           git config user.name "petclinic-ci"
           git config user.email "petclinic-ci@example.invalid"
-          git add base/deployment.yaml
+          git add environments/dev/kustomization.yaml
           git diff --cached --quiet || git commit -m "Deploy new image: ${DIGEST}"
           git push
         env:
