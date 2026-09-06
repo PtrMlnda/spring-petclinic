@@ -171,9 +171,9 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         working-directory: deploy
         run: |
-          yq -i '.spec.template.spec.containers[0].image = strenv(NEW_IMAGE)' base/deployment.yaml
+          yq -i '.images[0].digest = strenv(NEW_DIGEST)' environments/dev/kustomization.yaml
         env:
-          NEW_IMAGE: ghcr.io/ptrmlnda/petclinic@${{ steps.push.outputs.digest }}
+          NEW_DIGEST: ${{ steps.push.outputs.digest }}
 
       - name: Commit and push changes
         if: ${{ github.ref == 'refs/heads/main' }}
