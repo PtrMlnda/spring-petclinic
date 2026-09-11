@@ -167,25 +167,39 @@ jobs:
           token: ${{ secrets.DEPLOY_PAT }}
           path: deploy
 
-      - name: Update image digest
+      - name: Open promotion PRs
         if: ${{ github.ref == 'refs/heads/main' }}
         working-directory: deploy
-        run: |
-          yq -i '.images[0].digest = strenv(NEW_DIGEST)' environments/dev/kustomization.yaml
         env:
-          NEW_DIGEST: ${{ steps.push.outputs.digest }}
-
-      - name: Commit and push changes
-        if: ${{ github.ref == 'refs/heads/main' }}
-        working-directory: deploy
+          DIGEST: ${{ steps.push.outputs.digest }}
+          GH_TOKEN: ${{ secrets.DEPLOY_PAT }}
+          SHORT_SHA: ${{ github.sha }}
         run: |
           git config user.name "petclinic-ci"
           git config user.email "petclinic-ci@example.invalid"
-          git add environments/dev/kustomization.yaml
-          git diff --cached --quiet || git commit -m "Deploy new image: ${DIGEST}"
-          git push
-        env:
-          DIGEST: ${{ steps.push.outputs.digest }}
+
+          for ENV in prod dev; do
+            BRANCH="promote-${ENV}-${SHORT_SHA}"
+            git checkout main
+            git checkout -b "${BRANCH}"
+
+            yq -i '.images[0].digest = strenv(DIGEST)' "environments/${ENV}/kustomization.yaml"
+
+            if git diff --quiet; then
+              echo "No changes made to ${ENV}"
+              continue
+            fi
+
+            git commit -am "Promote ${DIGEST} to ${ENV}"
+            git push -u origin "${BRANCH}"
+            gh pr create --base main --head "${BRANCH}" \
+              --title "Promote ${DIGEST} to ${ENV}" \
+              --body "Automated promotion of signed image ${DIGEST}"
+
+            if [ "$ENV" = "dev" ]; then
+              gh pr merge "${BRANCH}" --auto --squash --delete-branch
+            fi
+          done
 
       - name: Generate SBOM
         uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
