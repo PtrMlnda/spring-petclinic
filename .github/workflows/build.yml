@@ -42,6 +42,7 @@ jobs:
     permissions:
       contents: read
       packages: write # Allow to push docker image to GHCR
+      id-token: write # Required for OIDC token for keyless signing
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -151,10 +152,8 @@ jobs:
 
       - name: Sign Docker image
         if: ${{ github.ref == 'refs/heads/main' }} # Sign the image only if the workflow is triggered by a push to the main branch
-        run: cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${IMAGE}@${DIGEST}"
+        run: cosign sign --yes "${IMAGE}@${DIGEST}"
         env:
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           IMAGE: ghcr.io/ptrmlnda/petclinic
           DIGEST: ${{ steps.push.outputs.digest }}
 
