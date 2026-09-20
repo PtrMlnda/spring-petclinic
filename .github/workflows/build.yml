@@ -196,7 +196,7 @@ jobs:
               --body "Automated promotion of signed image ${DIGEST}"
 
             if [ "$ENV" = "dev" ]; then
-              gh pr merge "${BRANCH}" --squash --admin
+              gh pr merge "${BRANCH}" --squash
             fi
           done
 
